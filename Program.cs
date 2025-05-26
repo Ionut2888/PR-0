@@ -18,10 +18,11 @@ public static class Program
         }
 
         using (var gameWindow = new GameWindow(sdl))
+        using (var audioManager = new AudioManager(sdl))
         {
             var input = new Input(sdl);
             var gameRenderer = new GameRenderer(sdl, gameWindow);
-            var engine = new Engine(gameRenderer, input);
+            var engine = new Engine(gameRenderer, input, audioManager);
 
             engine.SetupWorld();
 

@@ -11,6 +11,7 @@ public class Engine
 {
     private readonly GameRenderer _renderer;
     private readonly Input _input;
+    private readonly AudioManager _audioManager;
     private readonly ScriptEngine _scriptEngine = new();
 
     private readonly Dictionary<int, GameObject> _gameObjects = new();
@@ -22,10 +23,11 @@ public class Engine
 
     private DateTimeOffset _lastUpdate = DateTimeOffset.Now;
 
-    public Engine(GameRenderer renderer, Input input)
+    public Engine(GameRenderer renderer, Input input, AudioManager audioManager)
     {
         _renderer = renderer;
         _input = input;
+        _audioManager = audioManager;
 
         _input.OnMouseClick += (_, coords) => AddBomb(coords.x, coords.y);
     }
@@ -34,6 +36,8 @@ public class Engine
     {
         _player = new(SpriteSheet.Load(_renderer, "Player.json", "Assets"), 100, 100);
 
+        // Note: Jump sound is now generated in AudioManager constructor
+        
         var levelContent = File.ReadAllText(Path.Combine("Assets", "terrain.tmj"));
         var level = JsonSerializer.Deserialize<Level>(levelContent);
         if (level == null)
@@ -99,6 +103,10 @@ public class Engine
         
         if (_input.IsSpacePressed())
         {
+            if (_player._jumpsRemaining > 0) // Add this check to only play sound when jump is possible
+            {
+                _audioManager.PlaySound("jump");
+            }
             _player.Jump();
         }
         

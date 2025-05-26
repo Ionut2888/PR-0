@@ -17,7 +17,7 @@ public class PlayerObject : RenderableGameObject
 
     private float _verticalVelocity = 0;
     private bool _isGrounded = true;
-    private int _jumpsRemaining = 2;
+    internal int _jumpsRemaining = 2;  // Changed to internal
 
     public enum PlayerStateDirection
     {
