@@ -1,0 +1,25 @@
+{
+  "rowCount": 1,
+  "columnCount": 4,
+  "frameWidth": 16,
+  "frameHeight": 16,
+  "frameCenter": {
+    "offsetX": 8,
+    "offsetY": 8
+  },
+  "fileName": "healing_potion.png",
+  "animations": {
+    "Spawn": {
+      "startFrame": {
+        "row": 0,
+        "col": 0
+      },
+      "endFrame": {
+        "row": 0,
+        "col": 3
+      },
+      "durationMs": 1000,
+      "loop": true
+    }
+  }
+}

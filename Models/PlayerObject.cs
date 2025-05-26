@@ -107,6 +107,14 @@ public class PlayerObject : RenderableGameObject
         }
     }
 
+    public void Heal(int amount)
+    {
+        if (State.State != PlayerState.GameOver)
+        {
+            Health = Math.Min(_maxHealth, Health + amount);
+        }
+    }
+
     public void UpdateInvulnerability()
     {
         if (IsInvulnerable && (DateTimeOffset.Now - _lastHitTime).TotalSeconds >= _invulnerabilityDuration)

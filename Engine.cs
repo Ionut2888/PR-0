@@ -16,6 +16,7 @@ public class Engine
     private readonly Dictionary<int, GameObject> _gameObjects = new();
     private readonly Dictionary<string, TileSet> _loadedTileSets = new();
     private readonly Dictionary<int, Tile> _tileIdMap = new();
+    private SpriteSheet? _healingItemSprite;
 
     private Level _currentLevel = new();
     private PlayerObject? _player;
@@ -33,6 +34,7 @@ public class Engine
     public void SetupWorld()
     {
         _player = new(SpriteSheet.Load(_renderer, "Player.json", "Assets"), 100, 100);
+        _healingItemSprite = SpriteSheet.Load(_renderer, "HealingItem.json", "Assets");
 
         var levelContent = File.ReadAllText(Path.Combine("Assets", "terrain.tmj"));
         var level = JsonSerializer.Deserialize<Level>(levelContent);
@@ -143,6 +145,26 @@ public class Engine
         _renderer.PresentFrame();
     }
 
+    public void AddBomb(int X, int Y, bool translateCoordinates = true)
+    {
+        var worldCoords = translateCoordinates ? _renderer.ToWorldCoordinates(X, Y) : new Vector2D<int>(X, Y);
+
+        SpriteSheet spriteSheet = SpriteSheet.Load(_renderer, "BombExploding.json", "Assets");
+        spriteSheet.ActivateAnimation("Explode");
+
+        TemporaryGameObject bomb = new(spriteSheet, 2.1, (worldCoords.X, worldCoords.Y));
+        _gameObjects.Add(bomb.Id, bomb);
+    }
+
+    public void AddHealingItem(int X, int Y, bool translateCoordinates = true)
+    {
+        if (_healingItemSprite == null) return;
+        
+        var worldCoords = translateCoordinates ? _renderer.ToWorldCoordinates(X, Y) : new Vector2D<int>(X, Y);
+        HealingItem healingItem = new(_healingItemSprite, (worldCoords.X, worldCoords.Y));
+        _gameObjects.Add(healingItem.Id, healingItem);
+    }
+
     public void RenderAllObjects()
     {
         var toRemove = new List<int>();
@@ -153,13 +175,29 @@ public class Engine
             {
                 toRemove.Add(tempGameObject.Id);
             }
+            
+            // Check for collision with player for both bombs and healing items
+            if (_player != null)
+            {
+                var deltaX = Math.Abs(_player.Position.X - gameObject.Position.X);
+                var deltaY = Math.Abs(_player.Position.Y - gameObject.Position.Y);
+                if (deltaX < 32 && deltaY < 32)
+                {
+                    if (gameObject is HealingItem)
+                    {
+                        _player.Heal(HealingItem.HealAmount);
+                        toRemove.Add(gameObject.Id);
+                    }
+                }
+            }
         }
 
         foreach (var id in toRemove)
         {
             _gameObjects.Remove(id, out var gameObject);
 
-            if (_player == null)
+            // Handle bomb collisions separately since they should still damage even when removed
+            if (_player == null || gameObject is HealingItem)
             {
                 continue;
             }
@@ -167,7 +205,7 @@ public class Engine
             var tempGameObject = (TemporaryGameObject)gameObject!;
             var deltaX = Math.Abs(_player.Position.X - tempGameObject.Position.X);
             var deltaY = Math.Abs(_player.Position.Y - tempGameObject.Position.Y);
-            if (deltaX < 32 && deltaY < 32)
+            if (deltaX < 32 && deltaY < 32 && tempGameObject is not HealingItem)
             {
                 _player.TakeDamage(25); // Each bomb deals 25 damage
             }
@@ -223,16 +261,5 @@ public class Engine
     public (int X, int Y) GetPlayerPosition()
     {
         return _player!.Position;
-    }
-
-    public void AddBomb(int X, int Y, bool translateCoordinates = true)
-    {
-        var worldCoords = translateCoordinates ? _renderer.ToWorldCoordinates(X, Y) : new Vector2D<int>(X, Y);
-
-        SpriteSheet spriteSheet = SpriteSheet.Load(_renderer, "BombExploding.json", "Assets");
-        spriteSheet.ActivateAnimation("Explode");
-
-        TemporaryGameObject bomb = new(spriteSheet, 2.1, (worldCoords.X, worldCoords.Y));
-        _gameObjects.Add(bomb.Id, bomb);
     }
 }
